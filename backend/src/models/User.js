@@ -35,8 +35,25 @@ UserSchema.pre("save", async function (next) {
 
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(user.password, salt);
+
   next();
 });
+
+UserSchema.statics.findByCredentials = async function (email, password) {
+  const user = await User.findOne({ email }).select("+password");
+
+  if (!user) {
+    throw new Error("Invalid Credentials");
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+
+  if (!isMatch) {
+    throw new Error("Invalid Credentials");
+  }
+
+  return user;
+};
 
 const User = mongoose.model("User", UserSchema);
 
